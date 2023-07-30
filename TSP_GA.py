@@ -1,19 +1,6 @@
 import random
 import numpy as np
 import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
-import copy
-
-from scipy.spatial.distance import squareform, pdist
-
-import random
-import numpy as np
-import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
-import copy
-
 from scipy.spatial.distance import squareform, pdist
 
 
@@ -49,9 +36,9 @@ class TSP_GA:
             route_cost += self.cost_mat[start][end]
         route_cost += self.cost_mat[individual[-1]][individual[0]]
         return route_cost
-
+        
     @staticmethod
-    def __crossover(parent_a, parent_b):
+    def crossover(parent_a, parent_b):
         """
         :param parent_a: parent gene A
         :param parent_b: parent gene B
@@ -84,7 +71,7 @@ class TSP_GA:
         return elites
 
     @staticmethod
-    def __select_two_parents(population, fitnesses):
+    def select_two_parents(population, fitnesses):
         total_fitness = sum(fitnesses)
         selection_probability = [fitness / total_fitness for fitness in fitnesses]
         parent_a_index = random.choices(range(len(population)), weights=selection_probability, k=1)[0]
@@ -113,10 +100,10 @@ class TSP_GA:
             fitnesses = [self.fitness(individual) for individual in population]  # 求解每个个体的适应度并保存为列表
             next_population = self.select_elites(population, fitnesses)  # 精英选择
             while len(next_population) < self.pop_size:
-                parent_a, parent_b = self.__select_two_parents(population, fitnesses)
+                parent_a, parent_b = self.select_two_parents(population, fitnesses)
                 if random.random() < self.cross_rate:
-                    child_a = self.__crossover(parent_a, parent_b)
-                    child_b = self.__crossover(parent_b, parent_a)
+                    child_a = self.crossover(parent_a, parent_b)
+                    child_b = self.crossover(parent_b, parent_a)
                 else:
                     child_a = parent_a
                     child_b = parent_b
@@ -132,3 +119,22 @@ class TSP_GA:
         fitnesses = [self.fitness(individual) for individual in population]
         best_individual = population[fitnesses.index(min(fitnesses))]
         return best_individual, min(fitnesses), best_fitness
+
+
+if __name__ == '__main__':
+    
+    data = pd.read_csv('data.csv', header=None)  # test dataset
+    data_dic = list(data.itertuples(index=False, name=None))
+    distances = squareform(pdist(data_dic))  # calculate distances matrix
+
+    res = TSP_GA(
+        iteration=10000,  # iteration
+        pop_size=180,  # population size
+        mutation_rate=0.1,  # mutation rate
+        cost_mat=distances,  # your distances matrix
+        elite_rate=0.5,  # elite rate
+        cross_rate=0.9  # cross rate
+    )
+    result = res.solve()
+    best_individual = result[0]  # best individual
+    best_fitness = result[1]  # best fitness
